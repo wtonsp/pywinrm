@@ -183,6 +183,16 @@ class Transport(object):
             DISPLAYED_PROXY_WARNING = True
             warnings.warn(message, DeprecationWarning)
 
+        # Retry on connection errors, with a backoff factor
+        retries = requests.packages.urllib3.util.retry.Retry(total=10,
+                                                             connect=10,
+                                                             status=10,
+                                                             read=0,
+                                                             backoff_factor=5.0,
+                                                             status_forcelist=(413, 425, 429, 503, 501))
+        session.mount('http://', requests.adapters.HTTPAdapter(max_retries=retries))
+        session.mount('https://', requests.adapters.HTTPAdapter(max_retries=retries))
+
         session.proxies = settings['proxies']
 
         # specified validation mode takes precedence
